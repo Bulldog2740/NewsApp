@@ -20,7 +20,6 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-       // buildConfigField "String", "NEWS_API_KEY", "\"edad37e8963747e78ef7ff43503b26c3\""
         buildConfigField "String", "NEWS_API_KEY", "\"08177687ca754f8c91e7c540eb3077fd\""
     }
 

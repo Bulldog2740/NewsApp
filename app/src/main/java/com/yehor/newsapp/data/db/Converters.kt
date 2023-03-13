@@ -3,7 +3,6 @@ package com.yehor.newsapp.data.db
 import androidx.room.TypeConverter
 import com.yehor.newsapp.data.model.Source
 
-
 class Converters {
     @TypeConverter
     fun fromSource(source: Source): String {

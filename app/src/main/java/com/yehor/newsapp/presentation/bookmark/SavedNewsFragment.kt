@@ -1,39 +1,43 @@
 package com.yehor.newsapp.presentation.bookmark
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
-import by.kirich1409.viewbindingdelegate.viewBinding
 import com.google.android.material.snackbar.Snackbar
-import com.yehor.newsapp.R
-import com.yehor.newsapp.core.autoCleared
 import com.yehor.newsapp.databinding.FragmentSavedNewsBinding
 import com.yehor.newsapp.presentation.adapter.LoadStateAdapter
 import com.yehor.newsapp.presentation.adapter.NewsAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SavedNewsFragment : Fragment(R.layout.fragment_saved_news) {
+class SavedNewsFragment : Fragment() {
 
     @Inject
-    lateinit var  viewModel: SavedNewsViewModel
-    private var pagingAdapter by autoCleared<NewsAdapter>()
+    lateinit var viewModel: SavedNewsViewModel
+    private lateinit var pagingAdapter: NewsAdapter
 
-    private val binding : FragmentSavedNewsBinding by viewBinding(
-        FragmentSavedNewsBinding::bind,
-        onViewDestroyed = { _: FragmentSavedNewsBinding ->
-            // reset view
-        })
+    private val binding: FragmentSavedNewsBinding by lazy {
+        FragmentSavedNewsBinding.inflate(layoutInflater)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return binding.root
+    }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -41,6 +45,7 @@ class SavedNewsFragment : Fragment(R.layout.fragment_saved_news) {
         binding.retry.setOnClickListener { pagingAdapter.retry() }
         decorateRecyclerView()
         subscribeUI()
+
     }
 
     private fun subscribeUI() {
@@ -49,16 +54,21 @@ class SavedNewsFragment : Fragment(R.layout.fragment_saved_news) {
                 pagingAdapter.submitData(it)
             }
         }
+        viewModel.positionLiveDate.observe(viewLifecycleOwner) {
+            binding.rvSavedNews.scrollY = it
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewModel.onArticleClicked(binding.rvSavedNews.scrollY)
     }
 
     private fun initAdapter() {
-        pagingAdapter = NewsAdapter {
-            kotlin.runCatching {
-                val action = SavedNewsFragmentDirections.actionSavedNewsFragmentToArticleFragment(
-                    it
-                )
-                findNavController().navigate(action)
-            }
+        pagingAdapter = NewsAdapter { article ->
+            val action =
+                SavedNewsFragmentDirections.actionSavedNewsFragmentToArticleFragment(article)
+            findNavController().navigate(action)
         }
         binding.rvSavedNews.adapter = pagingAdapter.withLoadStateFooter(
             footer = LoadStateAdapter { pagingAdapter.retry() }
@@ -83,7 +93,8 @@ class SavedNewsFragment : Fragment(R.layout.fragment_saved_news) {
 
                 if (article != null) {
                     viewModel.deleteArticle(article)
-                    pagingAdapter.notifyItemRangeRemoved(position, 1)
+                    pagingAdapter.notifyItemRemoved(position)
+                    pagingAdapter.notifyDataSetChanged()
                     viewModel.invalidateSavedNewPagingSource()
                     pagingAdapter.refresh()
                 }

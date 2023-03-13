@@ -51,7 +51,7 @@ class NewsAdapter(
         val binding: ItemArticlePreviewBinding = DataBindingUtil.inflate(
             LayoutInflater.from(parent.context), R.layout.item_article_preview, parent, false
         )
-
+      //  val  holder =  ViewHolder(binding);
         binding.root.setOnClickListener {
             binding.article?.let {
                 navigateToArticle?.invoke(it)

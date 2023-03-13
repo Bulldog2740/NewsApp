@@ -7,4 +7,7 @@
     <string name="title">TITLE</string>
     <string name="source">SOURCE</string>
     <string name="retry">Retry</string>
+    <string name="popular">Popular</string>
+    <string name="everything_by_new">Everything by new</string>
+    <string name="everything_by_old">Everything by old</string>
 </resources>

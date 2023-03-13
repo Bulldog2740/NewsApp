@@ -2,7 +2,6 @@ package com.yehor.newsapp.presentation.breaking
 
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,9 +13,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.PagingData
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
-import by.kirich1409.viewbindingdelegate.viewBinding
 import com.yehor.newsapp.R
-import com.yehor.newsapp.core.autoCleared
 import com.yehor.newsapp.data.model.Article
 import com.yehor.newsapp.databinding.FragmentBreakingNewsBinding
 import com.yehor.newsapp.presentation.adapter.LoadStateAdapter
@@ -24,18 +21,15 @@ import com.yehor.newsapp.presentation.adapter.NewsAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
 
 @AndroidEntryPoint
 class NewsFragment : Fragment() {
 
     @Inject
     lateinit var viewModel: BreakingNewsViewModel
-    private var pagingAdapter by autoCleared<NewsAdapter>()
+    private lateinit var pagingAdapter: NewsAdapter
 
     private val binding: FragmentBreakingNewsBinding by lazy {
         FragmentBreakingNewsBinding.inflate(layoutInflater)
@@ -43,7 +37,14 @@ class NewsFragment : Fragment() {
 
     private val recyclerView: RecyclerView
         get() = binding.rvBreakingNews
-    private var listSpinner = arrayOf("Popular", "Everything by new", "Everything by old")
+
+    private val listSpinner: ArrayList<String> by lazy {
+        arrayListOf(
+            getString(R.string.popular),
+            getString(R.string.everything_by_new),
+            getString(R.string.everything_by_old)
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,17 +60,21 @@ class NewsFragment : Fragment() {
         binding.retry.setOnClickListener { pagingAdapter.retry() }
         decorateRecyclerView()
         observeNewsData(viewModel.breakingNewsStream)
+        viewModel.positionLiveDate.observe(viewLifecycleOwner) {
+            binding.rvBreakingNews.scrollY = it
+        }
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewModel.onArticleClicked(binding.rvBreakingNews.scrollY)
     }
 
     private fun initAdapters() {
         spinnerAdapter()
-        pagingAdapter = NewsAdapter {article ->
-            kotlin.runCatching {
-                val action = NewsFragmentDirections.actionBreakingNewsFragmentToArticleFragment(article)
-                findNavController().navigate(action)
-            }.onFailure {
-                Log.d("TAG_EVENT", "initAdapters: ${it.message}")
-            }
+
+        pagingAdapter = NewsAdapter { article ->
+            val action = NewsFragmentDirections.actionBreakingNewsFragmentToArticleFragment(article)
+            findNavController().navigate(action)
         }
         pagingAdapter.apply {
             recyclerView.adapter = withLoadStateFooter(
@@ -113,6 +118,7 @@ class NewsFragment : Fragment() {
     }
 
     private fun observeNewsData(dataStream: Flow<PagingData<Article>>) {
+        viewModel.onArticleClicked(binding.rvBreakingNews.scrollY)
         lifecycleScope.launch {
             dataStream.collectLatest {
                 pagingAdapter.submitData(it)

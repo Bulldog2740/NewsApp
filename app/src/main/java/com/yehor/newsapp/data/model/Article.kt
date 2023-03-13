@@ -1,10 +1,12 @@
 package com.yehor.newsapp.data.model
 
+import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.io.Serializable
+import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "articles")
+@Parcelize
 data class Article(
     @PrimaryKey(autoGenerate = true)
     val id: Int? = null,
@@ -16,4 +18,34 @@ data class Article(
     val title: String?,
     val url: String?,
     val urlToImage: String?
-) : Serializable
+) : Parcelable{
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Article
+
+        if (id != other.id) return false
+        if (author != other.author) return false
+        if (content != other.content) return false
+        if (description != other.description) return false
+        if (publishedAt != other.publishedAt) return false
+        if (title != other.title) return false
+        if (url != other.url) return false
+        if (urlToImage != other.urlToImage) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id ?: 0
+        result = 31 * result + (author?.hashCode() ?: 0)
+        result = 31 * result + (content?.hashCode() ?: 0)
+        result = 31 * result + (description?.hashCode() ?: 0)
+        result = 31 * result + (publishedAt?.hashCode() ?: 0)
+        result = 31 * result + (title?.hashCode() ?: 0)
+        result = 31 * result + (url?.hashCode() ?: 0)
+        result = 31 * result + (urlToImage?.hashCode() ?: 0)
+        return result
+    }
+}
